@@ -200,6 +200,17 @@
             border-radius: 4px;
         }
 
+        /* NEW: Styles for highlighting Sundays */
+        .sunday-highlight {
+            background-color: #FFECB3 !important; /* Light yellow for Sunday rows */
+        }
+
+        /* NEW: Styles for validation errors */
+        .error-cell {
+            background-color: #FFCDD2 !important; /* Light red for error cells */
+            border: 1px solid #D32F2F !important; /* Darker red border for emphasis */
+        }
+
         /* Estilos para impressão */
         @media print {
             body {
@@ -233,26 +244,29 @@
             /* Layout de flexbox para as seções na impressão */
             .print-section-container {
                 display: flex;
-                flex-wrap: nowrap; /* Impede quebras de linha entre as tabelas */
-                gap: 10px; /* Espaçamento entre as tabelas */
+                flex-wrap: nowrap;
+                gap: 10px;
                 margin-bottom: 20px;
-                width: 100%; /* Garante que o container ocupe a largura total */
+                width: 100%;
             }
 
             .print-section-container table {
                 border-collapse: collapse;
-                flex-shrink: 0; /* Impede que as tabelas encolham */
-                width: 100%; /* Faz as tabelas preencherem o espaço disponível no flex item */
+                flex-shrink: 0;
+                width: 100%;
             }
 
-            .print-section-container th { /* Cabeçalho da tabela na impressão */
+            .print-section-container th {
                 background-color: #2c3e50 !important; /* Azul escuro */
                 color: white !important; /* Letra branca */
-                -webkit-print-color-adjust: exact; /* Força a impressão das cores de fundo no Chrome/Safari */
-                color-adjust: exact; /* Força a impressão das cores de fundo */
+                border: 1px solid #000;
+                padding: 2px;
+                text-align: center;
+                vertical-align: top;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
             }
-
-            .print-section-container td { /* Estilo para células de dados na impressão */
+            .print-section-container td {
                 border: 1px solid #000;
                 padding: 2px;
                 text-align: center;
@@ -270,8 +284,8 @@
                 display: none; /* Esconde botões de adicionar na impressão */
             }
             .multi-line-cell {
-                text-align: left; /* Alinha o texto à esquerda para células com múltiplas linhas */
-                padding-left: 5px; /* Pequeno padding para legibilidade */
+                text-align: left;
+                padding-left: 5px;
             }
 
             /* Estilos para o título principal na impressão */
@@ -279,8 +293,14 @@
                 background-color: #FFD700 !important; /* Amarelo */
                 color: #333 !important; /* Cor de texto mais escura para contraste */
                 border: 1px solid #FFA500 !important; /* Borda laranja */
-                -webkit-print-color-adjust: exact; /* Força a impressão das cores de fundo no Chrome/Safari */
-                color-adjust: exact; /* Força a impressão das cores de fundo */
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+
+            /* Ensure highlights are printed */
+            .sunday-highlight-print, .error-cell-print {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
             }
         }
     </style>
@@ -321,13 +341,7 @@
                 <button onclick="exportarPDF()" class="export-btn">Exportar PDF</button>
             </div>
         </div>
-        <!-- 1. Calendário fixo visual -->
-            <div style="margin-bottom: 20px; text-align: center;">
-            <input type="date" id="calendarioVisual" onchange="destacarDataSelecionada()">
-            </div>
-        <!-- Seções Principais (Trabalhador e Atividade) -->
         <div class="planilhas-container">
-            <!-- Seção Trabalhador -->
             <div class="section">
                 <div class="section-header">
                     <span>PLANILHA DO TRABALHADOR</span>
@@ -351,7 +365,6 @@
                 </table>
             </div>
 
-            <!-- Seção Atividade -->
             <div class="section">
                 <div class="section-header">
                     <span>ATIVIDADES</span>
@@ -370,9 +383,7 @@
             </div>
         </div>
 
-        <!-- Seções Fluidoterapia -->
         <div class="fluidoterapia-container">
-            <!-- Fluidoterapia -->
             <div class="section">
                 <div class="section-header">
                     <span>FLUIDOTERAPIA</span>
@@ -390,7 +401,6 @@
                 </table>
             </div>
 
-            <!-- Harmonização -->
             <div class="section">
                 <div class="section-header">
                     <span>HARMONIZAÇÃO DO SALÃO</span>
@@ -408,7 +418,6 @@
                 </table>
             </div>
 
-            <!-- Passe Fluidoterapia -->
             <div class="section">
                 <div class="section-header">
                     <span>PASSES</span>
@@ -471,10 +480,14 @@
             const hoje = new Date();
             document.getElementById('mesSelect').value = String(hoje.getMonth() + 1).padStart(2, '0');
             document.getElementById('anoInput').value = hoje.getFullYear();
+            // Set the fixed calendar to today's date
+            const todayISO = hoje.toISOString().split('T')[0];
+            document.getElementById('calendarioVisual').value = todayISO;
+
             carregarDados(); // Carrega os dados salvos ou cria novos
         }
 
-        // Cria o HTML para um seletor de trabalhadores
+        // Creates HTML for a worker selector
         function criarSelectTrabalhadores() {
             let html = '<option value="">Selecionar...</option>';
             for (let codigo in trabalhadores) {
@@ -483,7 +496,7 @@
             return html;
         }
 
-        // Cria o HTML para um seletor de livros
+        // Creates HTML for a book selector
         function criarSelectLivros() {
             let html = '<option value="">Selecionar...</option>';
             for (let codigo in livros) {
@@ -492,7 +505,7 @@
             return html;
         }
 
-        // Cria o HTML para um seletor de atividades
+        // Creates HTML for an activity selector
         function criarSelectAtividades() {
             let html = '<option value="">Selecionar...</option>';
             for (let codigo in atividades) {
@@ -567,14 +580,195 @@
             salvarDados();
         }
 
+        // Helper function to check if a date is a Sunday
+        function isSunday(dateString) {
+            if (!dateString) return false;
+            const date = new Date(dateString + 'T00:00:00'); // Add T00:00:00 to avoid timezone issues
+            return date.getDay() === 0; // Sunday is 0
+        }
+
+        // Helper function to check if a date is the second Sunday of the month
+        function isSecondSunday(dateString) {
+            if (!dateString) return false;
+            const date = new Date(dateString + 'T00:00:00');
+            const dayOfMonth = date.getDate();
+            const dayOfWeek = date.getDay(); // 0 for Sunday
+
+            // Check if it's a Sunday and if it falls within the days for the second week
+            return dayOfWeek === 0 && (dayOfMonth >= 8 && dayOfMonth <= 14);
+        }
+
+        // Function to highlight the selected date on the fixed calendar (placeholder for now)
+        function destacarDataSelecionada() {
+            // This function could be used to visually highlight the selected date on the calendar,
+            // or perhaps filter the tables to show only data for that date.
+            // For now, it serves as a placeholder as per user request.
+            console.log('Data selecionada no calendário visual:', document.getElementById('calendarioVisual').value);
+            // Re-render all tables to ensure validations are re-applied if needed based on this date
+            // (though validation is triggered by individual cell changes or carregarDados)
+            validateAllData();
+        }
+
+        // Centralized validation function
+        function validateAllData() {
+            // Clear all existing error highlights first
+            document.querySelectorAll('.error-cell').forEach(el => el.classList.remove('error-cell'));
+
+            // Validation Rule 1 & 4: Workers Lídia, Fátima, Márcia (no Sundays) / Dilma, Jany, Rogério (only Sundays)
+            dadosPlanilha.trabalhador.forEach((linha, rowIndex) => {
+                // Ensure the row exists in the DOM
+                const rowElement = document.querySelector(`#tabelaTrabalhador tbody tr:nth-child(${rowIndex + 1})`);
+                if (!rowElement) return;
+
+                const isCurrentSunday = isSunday(linha.dia);
+                
+                const checkWorkerRule = (workerCode, cellElement) => {
+                    if (!workerCode) return;
+                    const workerName = trabalhadores[workerCode];
+                    
+                    // Rule 1: Lídia, Fátima, Márcia cannot work on Sundays
+                    if (['LIDIA', 'FÁTIMA', 'MÁRCIA'].includes(workerName) && isCurrentSunday) {
+                        cellElement.classList.add('error-cell');
+                    }
+                    // Rule 4: Dilma, Jany, Rogério only work on Sundays
+                    if (['DILMA', 'JANY', 'ROGÉRIO'].includes(workerName) && !isCurrentSunday && linha.dia) {
+                        cellElement.classList.add('error-cell');
+                    }
+                };
+                
+                // For 'Recepção'
+                const recepcaoCell = rowElement.children[1];
+                checkWorkerRule(linha.recepcao, recepcaoCell.querySelector('.select-field'));
+
+                // For 'Atendimento Fraterno'
+                const atendimentoFraternoCells = rowElement.children[2].querySelectorAll('.select-field');
+                linha.atendimentoFraterno.forEach((workerCode, workerIndex) => {
+                    checkWorkerRule(workerCode, atendimentoFraternoCells[workerIndex]);
+                });
+
+                // For 'Passe'
+                const passeCells = rowElement.children[3].querySelectorAll('.select-field');
+                linha.passe.forEach((workerCode, workerIndex) => {
+                    checkWorkerRule(workerCode, passeCells[workerIndex]);
+                });
+
+                // For 'Direção'
+                const direcaoCell = rowElement.children[4];
+                checkWorkerRule(linha.direcao, direcaoCell.querySelector('.select-field'));
+
+                // For 'Expositor' (text input, no direct worker code)
+                const expositorInput = rowElement.children[5].querySelector('.input-field');
+                const expositorWorkerCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === linha.expositor);
+                if (expositorWorkerCode) {
+                    checkWorkerRule(expositorWorkerCode, expositorInput);
+                }
+
+                // Rule 2: Eduardo not on second Sunday (specifically for Direção)
+                if (linha.direcao === 'TB03' && isSecondSunday(linha.dia)) { // TB03 is Eduardo
+                    direcaoCell.querySelector('.select-field').classList.add('error-cell');
+                }
+                
+                // Rule 5: Jany in Passe requires Jany or Rogério as Expositor
+                const janyCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'JANY');
+                const rogerioCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'ROGÉRIO');
+
+                const isJanyInPasse = linha.passe.includes(janyCode);
+                const isExpositorJanyOrRogerio = (linha.expositor === trabalhadores[janyCode] || linha.expositor === trabalhadores[rogerioCode]);
+
+                if (isJanyInPasse && !isExpositorJanyOrRogerio) {
+                    passeCells.forEach(cell => cell.classList.add('error-cell'));
+                    expositorInput.classList.add('error-cell'); // Also highlight expositor as it's part of the rule
+                }
+
+                // Rule 6: Atendimento Fraterno exclusivity
+                const atendimentoFraternoWorkers = linha.atendimentoFraterno.filter(Boolean); // Filter out empty strings
+                
+                // Collect all other assigned workers for the same day in this row
+                const otherAssignedWorkers = [
+                    linha.recepcao,
+                    ...linha.passe,
+                    linha.direcao,
+                    expositorWorkerCode // Use the code if expositor is a known worker
+                ].filter(Boolean);
+
+                let conflictDetected = false;
+                atendimentoFraternoWorkers.forEach(afWorker => {
+                    if (otherAssignedWorkers.includes(afWorker)) {
+                        conflictDetected = true;
+                    }
+                });
+
+                if (conflictDetected) {
+                    // Highlight Atendimento Fraterno cells
+                    atendimentoFraternoCells.forEach(cell => cell.classList.add('error-cell'));
+
+                    // Highlight conflicting cells in other activities for the same day
+                    if (atendimentoFraternoWorkers.includes(linha.recepcao)) recepcaoCell.querySelector('.select-field').classList.add('error-cell');
+                    linha.passe.forEach((pWorker, idx) => {
+                        if (atendimentoFraternoWorkers.includes(pWorker)) passeCells[idx].classList.add('error-cell');
+                    });
+                    if (atendimentoFraternoWorkers.includes(linha.direcao)) direcaoCell.querySelector('.select-field').classList.add('error-cell');
+                    if (expositorWorkerCode && atendimentoFraternoWorkers.includes(expositorWorkerCode)) expositorInput.classList.add('error-cell');
+                }
+            });
+
+            // Validate Fluidoterapia, Harmonização, Passe Fluidoterapia tables for Rule 1 & 4
+            ['fluidoterapia', 'harmonizacao', 'passeFluidoterapia'].forEach(tableName => {
+                const tableBody = document.querySelector(`#tabela${tableName.charAt(0).toUpperCase() + tableName.slice(1)} tbody`);
+                if (!tableBody) return; // Ensure table exists
+
+                dadosPlanilha[tableName].forEach((linha, rowIndex) => {
+                    const isCurrentSunday = isSunday(linha.dia);
+                    
+                    let workerCodesToCheck = [];
+                    let cellsToHighlight = [];
+
+                    if (tableName === 'fluidoterapia') {
+                        workerCodesToCheck = linha.trabalhadores;
+                        // Select all select elements in the two rows for fluidoterapia
+                        const firstRow = tableBody.querySelector(`tr:nth-child(${rowIndex * 2 + 1})`);
+                        const secondRow = tableBody.querySelector(`tr:nth-child(${rowIndex * 2 + 2})`);
+                        if (firstRow) cellsToHighlight.push(...firstRow.querySelectorAll('td select'));
+                        if (secondRow) cellsToHighlight.push(...secondRow.querySelectorAll('td select'));
+                    } else if (tableName === 'harmonizacao' || tableName === 'passeFluidoterapia') {
+                        workerCodesToCheck = [linha.trabalhador];
+                        const row = tableBody.querySelector(`tr:nth-child(${rowIndex + 1})`);
+                        if (row) cellsToHighlight.push(row.querySelector('td:nth-child(2) select'));
+                    }
+
+                    workerCodesToCheck.filter(Boolean).forEach((workerCode, workerIndex) => {
+                        const workerName = trabalhadores[workerCode];
+                        const cellElement = cellsToHighlight[workerIndex];
+
+                        if (!cellElement) return; // Skip if element not found
+
+                        // Rule 1: Lídia, Fátima, Márcia cannot work on Sundays
+                        if (['LIDIA', 'FÁTIMA', 'MÁRCIA'].includes(workerName) && isCurrentSunday) {
+                            cellElement.classList.add('error-cell');
+                        }
+                        // Rule 4: Dilma, Jany, Rogério only work on Sundays
+                        if (['DILMA', 'JANY', 'ROGÉRIO'].includes(workerName) && !isCurrentSunday && linha.dia) {
+                            cellElement.classList.add('error-cell');
+                        }
+                    });
+                });
+            });
+        }
+
+
         // Renderiza a tabela do trabalhador com os dados atuais
         function renderizarTabelaTrabalhador() {
             const tbody = document.querySelector('#tabelaTrabalhador tbody');
             tbody.innerHTML = '';
             dadosPlanilha.trabalhador.forEach((linha, index) => {
                 const tr = document.createElement('tr');
+                // Apply sunday-highlight class if it's a Sunday
+                if (isSunday(linha.dia)) {
+                    tr.classList.add('sunday-highlight');
+                }
+
                 tr.innerHTML = `
-                    <input type="date" class="input-field" onchange="atualizarDadoTrabalhador(${index}, 'dia', this.value)">
+                    <td><input type="date" class="input-field" value="${linha.dia || ''}" onchange="atualizarDadoTrabalhador(${index}, 'dia', this.value)"></td>
                     <td><select class="select-field" onchange="atualizarDadoTrabalhador(${index}, 'recepcao', this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td>
                         <div class="multi-trabalhador">
@@ -604,11 +798,11 @@
                 tr.children[3].querySelector('select:nth-child(2)').value = linha.passe[1];
                 tr.children[3].querySelector('select:nth-child(3)').value = linha.passe[2];
                 tr.children[4].children[0].value = linha.direcao;
-                tr.children[5].children[0].value = linha.expositor;
                 tr.children[6].children[0].value = linha.livro;
                                 
                 tbody.appendChild(tr);
             });
+            validateAllData(); // Run validation after rendering
         }
 
         // Renderiza a tabela de atividades com os dados atuais
@@ -617,8 +811,12 @@
             tbody.innerHTML = '';
             dadosPlanilha.atividade.forEach((linha, index) => {
                 const tr = document.createElement('tr');
+                // Apply sunday-highlight class if it's a Sunday
+                if (isSunday(linha.dia)) {
+                    tr.classList.add('sunday-highlight');
+                }
                 tr.innerHTML = `
-                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoAtividade(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><input type="date" class="input-field" value="${linha.dia || ''}" onchange="atualizarDadoAtividade(${index}, 'dia', this.value)"></td>
                     <td><select class="select-field" onchange="atualizarDadoAtividade(${index}, 'atividade', this.value)">${criarSelectAtividades()}</select></td>
                     <td><button class="delete-btn" onclick="removerLinhaAtividade(${index})">Excluir</button></td>
                 `;
@@ -626,6 +824,7 @@
                 tr.children[1].children[0].value = linha.atividade;
                 tbody.appendChild(tr);
             });
+            validateAllData(); // Run validation after rendering
         }
 
         // Renderiza a tabela de fluidoterapia com os dados atuais
@@ -634,15 +833,22 @@
             tbody.innerHTML = '';
             dadosPlanilha.fluidoterapia.forEach((linha, index) => {
                 const tr1 = document.createElement('tr');
+                const tr2 = document.createElement('tr');
+
+                // Apply sunday-highlight class if it's a Sunday to both rows
+                if (isSunday(linha.dia)) {
+                    tr1.classList.add('sunday-highlight');
+                    tr2.classList.add('sunday-highlight');
+                }
+
                 tr1.innerHTML = `
-                    <td rowspan="2"><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoFluidoterapia(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td rowspan="2"><input type="date" class="input-field" value="${linha.dia || ''}" onchange="atualizarDadoFluidoterapia(${index}, 'dia', this.value)"></td>
                     <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 0, this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 1, this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 2, this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td rowspan="2"><button class="delete-btn" onclick="removerLinhaFluidoterapia(${index})">Excluir</button></td>
                 `;
                                 
-                const tr2 = document.createElement('tr');
                 tr2.innerHTML = `
                     <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 3, this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 4, this.value)">${criarSelectTrabalhadores()}</select></td>
@@ -661,6 +867,7 @@
                 tbody.appendChild(tr1);
                 tbody.appendChild(tr2);
             });
+            validateAllData(); // Run validation after rendering
         }
 
         // Renderiza a tabela de harmonização com os dados atuais
@@ -669,8 +876,12 @@
             tbody.innerHTML = '';
             dadosPlanilha.harmonizacao.forEach((linha, index) => {
                 const tr = document.createElement('tr');
+                // Apply sunday-highlight class if it's a Sunday
+                if (isSunday(linha.dia)) {
+                    tr.classList.add('sunday-highlight');
+                }
                 tr.innerHTML = `
-                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoHarmonizacao(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><input type="date" class="input-field" value="${linha.dia || ''}" onchange="atualizarDadoHarmonizacao(${index}, 'dia', this.value)"></td>
                     <td><select class="select-field" onchange="atualizarDadoHarmonizacao(${index}, 'trabalhador', this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td><button class="delete-btn" onclick="removerLinhaHarmonizacao(${index})">Excluir</button></td>
                 `;
@@ -678,6 +889,7 @@
                 tr.children[1].children[0].value = linha.trabalhador;
                 tbody.appendChild(tr);
             });
+            validateAllData(); // Run validation after rendering
         }
 
         // Renderiza a tabela de passe fluidoterapia com os dados atuais
@@ -686,8 +898,12 @@
             tbody.innerHTML = '';
             dadosPlanilha.passeFluidoterapia.forEach((linha, index) => {
                 const tr = document.createElement('tr');
+                // Apply sunday-highlight class if it's a Sunday
+                if (isSunday(linha.dia)) {
+                    tr.classList.add('sunday-highlight');
+                }
                 tr.innerHTML = `
-                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoPasseFluidoterapia(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><input type="date" class="input-field" value="${linha.dia || ''}" onchange="atualizarDadoPasseFluidoterapia(${index}, 'dia', this.value)"></td>
                     <td><select class="select-field" onchange="atualizarDadoPasseFluidoterapia(${index}, 'trabalhador', this.value)">${criarSelectTrabalhadores()}</select></td>
                     <td><button class="delete-btn" onclick="removerLinhaPasseFluidoterapia(${index})">Excluir</button></td>
                 `;
@@ -695,47 +911,61 @@
                 tr.children[1].children[0].value = linha.trabalhador;
                 tbody.appendChild(tr);
             });
+            validateAllData(); // Run validation after rendering
         }
 
         // Funções de atualização de dados
         function atualizarDadoTrabalhador(index, campo, valor) {
             dadosPlanilha.trabalhador[index][campo] = valor;
             salvarDados();
+            renderizarTabelaTrabalhador(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarAtendimentoFraterno(index, trabalhadorIndex, valor) {
             dadosPlanilha.trabalhador[index].atendimentoFraterno[trabalhadorIndex] = valor;
             salvarDados();
+            renderizarTabelaTrabalhador(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarPasse(index, trabalhadorIndex, valor) {
             dadosPlanilha.trabalhador[index].passe[trabalhadorIndex] = valor;
+            
+            // Rule 3: Auto-fill Passe[0] to Direção
+            if (trabalhadorIndex === 0) {
+                dadosPlanilha.trabalhador[index].direcao = valor;
+            }
             salvarDados();
+            renderizarTabelaTrabalhador(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarDadoAtividade(index, campo, valor) {
             dadosPlanilha.atividade[index][campo] = valor;
             salvarDados();
+            renderizarTabelaAtividade(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarDadoFluidoterapia(index, campo, valor) {
             dadosPlanilha.fluidoterapia[index][campo] = valor;
             salvarDados();
+            renderizarTabelaFluidoterapia(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarTrabalhadorFluidoterapia(index, trabalhadorIndex, valor) {
             dadosPlanilha.fluidoterapia[index].trabalhadores[trabalhadorIndex] = valor;
             salvarDados();
+            renderizarTabelaFluidoterapia(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarDadoHarmonizacao(index, campo, valor) {
             dadosPlanilha.harmonizacao[index][campo] = valor;
             salvarDados();
+            renderizarTabelaHarmonizacao(); // Re-render to apply highlighting and re-validate
         }
 
         function atualizarDadoPasseFluidoterapia(index, campo, valor) {
             dadosPlanilha.passeFluidoterapia[index][campo] = valor;
             salvarDados();
+            renderizarTabelaPasseFluidoterapia(); // Re-render to apply highlighting and re-validate
         }
 
         // Funções de remoção de linha
@@ -804,12 +1034,12 @@
                         passeFluidoterapia: []
                     };
                                         
-                    // Adicionar 1 linha padrão para cada tabela
-                    adicionarLinhaTrabalhador();
-                    adicionarLinhaAtividade();
-                    adicionarLinhaFluidoterapia();
-                    adicionarLinhaHarmonizacao();
-                    adicionarLinhaPasseFluidoterapia();
+                    // Adicionar 1 linha padrão para cada tabela if empty
+                    if (dadosPlanilha.trabalhador.length === 0) adicionarLinhaTrabalhador();
+                    if (dadosPlanilha.atividade.length === 0) adicionarLinhaAtividade();
+                    if (dadosPlanilha.fluidoterapia.length === 0) adicionarLinhaFluidoterapia();
+                    if (dadosPlanilha.harmonizacao.length === 0) adicionarLinhaHarmonizacao();
+                    if (dadosPlanilha.passeFluidoterapia.length === 0) adicionarLinhaPasseFluidoterapia();
                 }
             } catch (e) {
                 console.error('Erro ao carregar dados do localStorage:', e);
@@ -826,12 +1056,12 @@
                         harmonizacao: [],
                         passeFluidoterapia: []
                     };
-                    // Adicionar 1 linha padrão para cada tabela
-                    adicionarLinhaTrabalhador();
-                    adicionarLinhaAtividade();
-                    adicionarLinhaFluidoterapia();
-                    adicionarLinhaHarmonizacao();
-                    adicionarLinhaPasseFluidoterapia();
+                    // Adicionar 1 linha padrão para cada tabela if empty
+                    if (dadosPlanilha.trabalhador.length === 0) adicionarLinhaTrabalhador();
+                    if (dadosPlanilha.atividade.length === 0) adicionarLinhaAtividade();
+                    if (dadosPlanilha.fluidoterapia.length === 0) adicionarLinhaFluidoterapia();
+                    if (dadosPlanilha.harmonizacao.length === 0) adicionarLinhaHarmonizacao();
+                    if (dadosPlanilha.passeFluidoterapia.length === 0) adicionarLinhaPasseFluidoterapia();
                 }
             }
 
@@ -840,6 +1070,7 @@
             renderizarTabelaFluidoterapia();
             renderizarTabelaHarmonizacao();
             renderizarTabelaPasseFluidoterapia();
+            validateAllData(); // Initial validation after data load and rendering
         }
 
         // Exporta a planilha para PDF (abrindo em uma nova janela para impressão)
@@ -850,7 +1081,77 @@
                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                         
             const janelaImpressao = window.open('', '_blank');
-                        
+            
+            // Helper function to determine if a cell should have an error class for printing
+            function checkPrintError(day, field, workerCodeOrValue, currentLineData = {}) {
+                const isSundayVal = isSunday(day);
+                const isSecondSundayVal = isSecondSunday(day);
+                const workerName = trabalhadores[workerCodeOrValue];
+                let hasError = false;
+
+                // Rule 1: Lídia, Fátima, Márcia cannot work on Sundays
+                if (['LIDIA', 'FÁTIMA', 'MÁRCIA'].includes(workerName) && isSundayVal) {
+                    hasError = true;
+                }
+                // Rule 4: Dilma, Jany, Rogério only work on Sundays
+                if (['DILMA', 'JANY', 'ROGÉRIO'].includes(workerName) && !isSundayVal && day) {
+                    hasError = true;
+                }
+                // Rule 2: Eduardo not on second Sunday (specifically for Direção)
+                if (workerCodeOrValue === 'TB03' && isSecondSundayVal && field === 'direcao') { // TB03 is Eduardo
+                    hasError = true;
+                }
+                
+                // Rule 5: Jany in Passe requires Jany or Rogério as Expositor
+                const janyCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'JANY');
+                const rogerioCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'ROGÉRIO');
+
+                const linhaTrabalhadorParaDia = dadosPlanilha.trabalhador.find(row => row.dia === day);
+
+                if (linhaTrabalhadorParaDia) {
+                    const isJanyInPasse = linhaTrabalhadorParaDia.passe.includes(janyCode);
+                    const isExpositorJanyOrRogerio = (linhaTrabalhadorParaDia.expositor === trabalhadores[janyCode] || linhaTrabalhadorParaDia.expositor === trabalhadores[rogerioCode]);
+
+                    if (isJanyInPasse && !isExpositorJanyOrRogerio) {
+                        if (field === 'passe' && linhaTrabalhadorParaDia.passe.includes(workerCodeOrValue)) {
+                             hasError = true;
+                        }
+                        if (field === 'expositor' && workerCodeOrValue === (Object.keys(trabalhadores).find(key => trabalhadores[key] === linhaTrabalhadorParaDia.expositor) || '')) {
+                             hasError = true;
+                        }
+                    }
+                }
+
+
+                // Rule 6: Atendimento Fraterno exclusivity
+                if (linhaTrabalhadorParaDia) {
+                    const atendimentoFraternoWorkers = linhaTrabalhadorParaDia.atendimentoFraterno.filter(Boolean);
+                    const otherAssignedWorkers = [
+                        linhaTrabalhadorParaDia.recepcao,
+                        ...linhaTrabalhadorParaDia.passe,
+                        linhaTrabalhadorParaDia.direcao,
+                        Object.keys(trabalhadores).find(key => trabalhadores[key] === linhaTrabalhadorParaDia.expositor)
+                    ].filter(Boolean);
+
+                    let conflictDetected = false;
+                    atendimentoFraternoWorkers.forEach(afWorker => {
+                        if (otherAssignedWorkers.includes(afWorker)) {
+                            conflictDetected = true;
+                        }
+                    });
+
+                    if (conflictDetected) {
+                        if (field === 'atendimentoFraterno' && atendimentoFraternoWorkers.includes(workerCodeOrValue)) {
+                            hasError = true;
+                        } else if (['recepcao', 'passe', 'direcao', 'expositor'].includes(field) && atendimentoFraternoWorkers.includes(workerCodeOrValue)) {
+                            hasError = true;
+                        }
+                    }
+                }
+
+                return hasError ? ' error-cell-print' : '';
+            }
+
             let htmlImpressao = `
                 <!DOCTYPE html>
                 <html>
@@ -901,6 +1202,19 @@
                             text-align: left;
                             padding-left: 5px;
                         }
+
+                        .sunday-highlight-print {
+                            background-color: #FFECB3 !important; /* Light yellow for Sunday rows */
+                            -webkit-print-color-adjust: exact;
+                            color-adjust: exact;
+                        }
+
+                        .error-cell-print {
+                            background-color: #FFCDD2 !important; /* Light red for error cells */
+                            border: 1px solid #D32F2F !important; /* Darker red border for emphasis */
+                            -webkit-print-color-adjust: exact;
+                            color-adjust: exact;
+                        }
                     </style>
                 </head>
                 <body>
@@ -908,8 +1222,7 @@
                     
                     <h2>PLANILHA PRINCIPAL</h2>
                     <div class="print-section-container">
-                        <div style="flex: 2;"> <!-- Container para a tabela de Trabalhador -->
-                            <table>
+                        <div style="flex: 2;"> <table>
                                 <thead>
                                     <tr>
                                         <th>DIA</th>
@@ -925,37 +1238,41 @@
                                 <tbody>`;
 
             // Adiciona as linhas da tabela principal (sem preenchimento para alinhar com atividade)
-            dadosPlanilha.trabalhador.forEach(linha => {
+            dadosPlanilha.trabalhador.forEach((linha) => {
                 // Garante que os arrays estejam inicializados para evitar erros
                 linha.atendimentoFraterno = linha.atendimentoFraterno || ['', ''];
                 linha.passe = linha.passe || ['', '', ''];
 
-                htmlImpressao += `
-                    <tr>
-                        <td>${linha.dia || ''}</td>
-                        <td>${linha.recepcao ? trabalhadores[linha.recepcao] : ''}</td>
-                        <td class="multi-line-cell">
-                            ${linha.atendimentoFraterno[0] ? trabalhadores[linha.atendimentoFraterno[0]] : ''}<br>
-                            ${linha.atendimentoFraterno[1] ? trabalhadores[linha.atendimentoFraterno[1]] : ''}
-                        </td>
-                        <td class="multi-line-cell">
-                            ${linha.passe[0] ? trabalhadores[linha.passe[0]] : ''}<br>
-                            ${linha.passe[1] ? trabalhadores[linha.passe[1]] : ''}<br>
-                            ${linha.passe[2] ? trabalhadores[linha.passe[2]] : ''}
-                        </td>
-                        <td>${linha.direcao ? trabalhadores[linha.direcao] : ''}</td>
-                        <td>${linha.expositor || ''}</td>
-                        <td>${linha.livro ? livros[linha.livro] : ''}</td>
-                        <td>${linha.tema || ''}</td>
-                    </tr>`;
+                let rowClass = '';
+                if (isSunday(linha.dia)) {
+                    rowClass += ' sunday-highlight-print';
+                }
+                
+                htmlImpressao += `<tr class="${rowClass}">
+                    <td>${linha.dia || ''}</td>
+                    <td class="${checkPrintError(linha.dia, 'recepcao', linha.recepcao, linha)}">${linha.recepcao ? trabalhadores[linha.recepcao] : ''}</td>
+                    <td class="multi-line-cell">
+                        <span class="${checkPrintError(linha.dia, 'atendimentoFraterno', linha.atendimentoFraterno[0], linha)}">${linha.atendimentoFraterno[0] ? trabalhadores[linha.atendimentoFraterno[0]] : ''}</span><br>
+                        <span class="${checkPrintError(linha.dia, 'atendimentoFraterno', linha.atendimentoFraterno[1], linha)}">${linha.atendimentoFraterno[1] ? trabalhadores[linha.atendimentoFraterno[1]] : ''}</span>
+                    </td>
+                    <td class="multi-line-cell">
+                        <span class="${checkPrintError(linha.dia, 'passe', linha.passe[0], linha)}">${linha.passe[0] ? trabalhadores[linha.passe[0]] : ''}</span><br>
+                        <span class="${checkPrintError(linha.dia, 'passe', linha.passe[1], linha)}">${linha.passe[1] ? trabalhadores[linha.passe[1]] : ''}</span><br>
+                        <span class="${checkPrintError(linha.dia, 'passe', linha.passe[2], linha)}">${linha.passe[2] ? trabalhadores[linha.passe[2]] : ''}</span>
+                    </td>
+                    <td class="${checkPrintError(linha.dia, 'direcao', linha.direcao, linha)}">${linha.direcao ? trabalhadores[linha.direcao] : ''}</td>
+                    <td class="${checkPrintError(linha.dia, 'expositor', Object.keys(trabalhadores).find(key => trabalhadores[key] === linha.expositor) || '', linha)}">${linha.expositor || ''}</td>
+                    <td>${linha.livro ? livros[linha.livro] : ''}</td>
+                    <td>${linha.tema || ''}</td>
+                </tr>`;
             });
+
 
             htmlImpressao += `
                                 </tbody>
                             </table>
                         </div>
-                        <div style="flex: 1;"> <!-- Container para a tabela de Atividade -->
-                            <table>
+                        <div style="flex: 1;"> <table>
                                 <thead>
                                     <tr>
                                         <th>DIA</th>
@@ -966,8 +1283,12 @@
 
             // Adiciona as linhas da tabela de atividade (sem preenchimento para alinhar com principal)
             dadosPlanilha.atividade.forEach(linha => {
+                let rowClass = '';
+                if (isSunday(linha.dia)) {
+                    rowClass += ' sunday-highlight-print';
+                }
                 htmlImpressao += `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td>${linha.dia || ''}</td>
                         <td>${linha.atividade ? atividades[linha.atividade] : ''}</td>
                     </tr>`;
@@ -981,8 +1302,7 @@
 
                     <h2>FLUIDOTERAPIA</h2>
                     <div class="print-section-container">
-                        <div style="flex: 2;"> <!-- Container para a tabela de Fluidoterapia -->
-                            <table>
+                        <div style="flex: 2;"> <table>
                                 <thead>
                                     <tr>
                                         <th>DIA</th>
@@ -994,18 +1314,21 @@
             // Adiciona as linhas da tabela de fluidoterapia (sem preenchimento para alinhar com harmonização/passe)
             dadosPlanilha.fluidoterapia.forEach(linha => {
                 linha.trabalhadores = linha.trabalhadores || ['', '', '', '', '', ''];
-
+                let rowClass = '';
+                if (isSunday(linha.dia)) {
+                    rowClass += ' sunday-highlight-print';
+                }
                 htmlImpressao += `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td rowspan="2">${linha.dia || ''}</td>
-                        <td>${linha.trabalhadores[0] ? trabalhadores[linha.trabalhadores[0]] : ''}</td>
-                        <td>${linha.trabalhadores[1] ? trabalhadores[linha.trabalhadores[1]] : ''}</td>
-                        <td>${linha.trabalhadores[2] ? trabalhadores[linha.trabalhadores[2]] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'fluidoterapia', linha.trabalhadores[0])}">${linha.trabalhadores[0] ? trabalhadores[linha.trabalhadores[0]] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'fluidoterapia', linha.trabalhadores[1])}">${linha.trabalhadores[1] ? trabalhadores[linha.trabalhadores[1]] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'fluidoterapia', linha.trabalhadores[2])}">${linha.trabalhadores[2] ? trabalhadores[linha.trabalhadores[2]] : ''}</td>
                     </tr>
-                    <tr>
-                        <td>${linha.trabalhadores[3] ? trabalhadores[linha.trabalhadores[3]] : ''}</td>
-                        <td>${linha.trabalhadores[4] ? trabalhadores[linha.trabalhadores[4]] : ''}</td>
-                        <td>${linha.trabalhadores[5] ? trabalhadores[linha.trabalhadores[5]] : ''}</td>
+                    <tr class="${rowClass}">
+                        <td class="${checkPrintError(linha.dia, 'fluidoterapia', linha.trabalhadores[3])}">${linha.trabalhadores[3] ? trabalhadores[linha.trabalhadores[3]] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'fluidoterapia', linha.trabalhadores[4])}">${linha.trabalhadores[4] ? trabalhadores[linha.trabalhadores[4]] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'fluidoterapia', linha.trabalhadores[5])}">${linha.trabalhadores[5] ? trabalhadores[linha.trabalhadores[5]] : ''}</td>
                     </tr>`;
             });
 
@@ -1013,8 +1336,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div style="flex: 1;"> <!-- Container para a tabela de Harmonização -->
-                            <table>
+                        <div style="flex: 1;"> <table>
                                 <thead>
                                     <tr>
                                         <th>DIA</th>
@@ -1024,10 +1346,14 @@
                                 <tbody>`;
 
             dadosPlanilha.harmonizacao.forEach(linha => {
+                let rowClass = '';
+                if (isSunday(linha.dia)) {
+                    rowClass += ' sunday-highlight-print';
+                }
                 htmlImpressao += `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td>${linha.dia || ''}</td>
-                        <td>${linha.trabalhador ? trabalhadores[linha.trabalhador] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'harmonizacao', linha.trabalhador)}">${linha.trabalhador ? trabalhadores[linha.trabalhador] : ''}</td>
                     </tr>`;
             });
 
@@ -1035,8 +1361,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div style="flex: 1;"> <!-- Container para a tabela de Passe Fluidoterapia -->
-                            <table>
+                        <div style="flex: 1;"> <table>
                                 <thead>
                                     <tr>
                                         <th>DIA</th>
@@ -1046,10 +1371,14 @@
                                 <tbody>`;
 
             dadosPlanilha.passeFluidoterapia.forEach(linha => {
+                let rowClass = '';
+                if (isSunday(linha.dia)) {
+                    rowClass += ' sunday-highlight-print';
+                }
                 htmlImpressao += `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td>${linha.dia || ''}</td>
-                        <td>${linha.trabalhador ? trabalhadores[linha.trabalhador] : ''}</td>
+                        <td class="${checkPrintError(linha.dia, 'passeFluidoterapia', linha.trabalhador)}">${linha.trabalhador ? trabalhadores[linha.trabalhador] : ''}</td>
                     </tr>`;
             });
 
