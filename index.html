@@ -663,9 +663,40 @@
                     checkWorkerRule(expositorWorkerCode, expositorInput);
                 }
 
-                // Rule 2: Eduardo not on second Sunday (specifically for Direção)
-                if (linha.direcao === 'TB03' && isSecondSunday(linha.dia)) { // TB03 is Eduardo
+                // Rule 2: Trabalhador Eduardo
+                // → Não pode trabalhar no segundo domingo do mês.
+                // Se for escalado nesse dia, a célula deve ser sinalizada (ex: cor vermelha ou alerta simples).
+                const isSecondSundayForCurrentLine = isSecondSunday(linha.dia);
+                const eduardoCode = 'TB03'; // Código do Eduardo
+
+                // Verifica Recepção
+                if (linha.recepcao === eduardoCode && isSecondSundayForCurrentLine) {
+                    recepcaoCell.querySelector('.select-field').classList.add('error-cell');
+                }
+
+                // Verifica Atendimento Fraterno
+                linha.atendimentoFraterno.forEach((workerCode, workerIndex) => {
+                    if (workerCode === eduardoCode && isSecondSundayForCurrentLine) {
+                        atendimentoFraternoCells[workerIndex].classList.add('error-cell');
+                    }
+                });
+
+                // Verifica Passe
+                linha.passe.forEach((workerCode, workerIndex) => {
+                    if (workerCode === eduardoCode && isSecondSundayForCurrentLine) {
+                        passeCells[workerIndex].classList.add('error-cell');
+                    }
+                });
+
+                // Verifica Direção
+                if (linha.direcao === eduardoCode && isSecondSundayForCurrentLine) {
                     direcaoCell.querySelector('.select-field').classList.add('error-cell');
+                }
+
+                // Verifica Expositor
+                const eduardoName = trabalhadores[eduardoCode];
+                if (linha.expositor === eduardoName && isSecondSundayForCurrentLine) {
+                    expositorInput.classList.add('error-cell');
                 }
                 
                 // Rule 5: Jany in Passe requires Jany or Rogério as Expositor
