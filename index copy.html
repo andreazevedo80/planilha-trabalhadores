@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilha de Trabalhadores Espíritas</title>
+    <style>
+        /* Estilos gerais */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif; /* Usando Inter como solicitado */
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px; /* Aumentado para acomodar o layout de grid */
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Ajuste para o título principal (h1) */
+        h1 {
+            text-align: center;
+            background-color: #FFD700; /* Amarelo */
+            color: #333; /* Cor de texto mais escura para contraste */
+            border: 1px solid #FFA500; /* Borda laranja */
+            border-radius: 8px; /* Bordas arredondadas */
+            padding: 10px 20px; /* Espaçamento interno */
+            font-size: 18px; /* Tamanho da fonte 18px */
+            margin: 0 auto 30px auto; /* Centraliza o bloco e mantém margem inferior */
+            width: fit-content; /* Ajusta a largura ao conteúdo */
+            display: block; /* Garante que o margin auto funcione para centralizar */
+        }
+
+        /* Controles de filtro e ações */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end; /* Alinha os itens na parte inferior */
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        input, select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px; /* Cantos arredondados */
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+            border-radius: 8px; /* Cantos arredondados */
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .add-btn {
+            background-color: #27ae60;
+        }
+
+        .add-btn:hover {
+            background-color: #229954;
+        }
+
+        .export-btn {
+            background-color: #e67e22;
+        }
+
+        .export-btn:hover {
+            background-color: #d35400;
+        }
+
+        /* Layout de grid para as seções principais */
+        .planilhas-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Planilha do Trabalhador maior que Atividades */
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Layout de grid para as seções de fluidoterapia */
+        .fluidoterapia-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr; /* Fluidoterapia maior, Harmonização e Passe menores */
+            gap: 20px;
+        }
+
+        .section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: #34495e;
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        /* Ajuste para o cabeçalho das tabelas (th) */
+        th {
+            background-color: #2c3e50; /* Azul escuro */
+            font-weight: bold;
+            color: white; /* Letra branca */
+            border: 1px solid #000; /* Mantém a borda preta para contraste */
+            padding: 6px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+            vertical-align: top; /* Alinha o conteúdo ao topo para multi-linhas */
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .input-field {
+            width: 100%;
+            border: none;
+            padding: 4px;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+
+        .select-field {
+            width: 100%;
+            border: none;
+            padding: 4px;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Estilo para múltiplos seletores de trabalhador */
+        .multi-trabalhador {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .multi-trabalhador select {
+            font-size: 10px;
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        /* Estilos para impressão */
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .controls {
+                display: none; /* Esconde os controles na impressão */
+            }
+            
+            .container {
+                box-shadow: none;
+                max-width: none;
+            }
+            
+            table {
+                font-size: 9px;
+                page-break-inside: auto; /* Permite quebras de página dentro da tabela */
+            }
+            
+            tr {
+                page-break-inside: avoid; /* Evita quebras de página dentro da linha */
+                page-break-after: auto; /* Permite quebra de página após a linha */
+            }
+
+            th, td {
+                padding: 3px;
+            }
+
+            /* Layout de flexbox para as seções na impressão */
+            .print-section-container {
+                display: flex;
+                flex-wrap: nowrap; /* Impede quebras de linha entre as tabelas */
+                gap: 10px; /* Espaçamento entre as tabelas */
+                margin-bottom: 20px;
+                width: 100%; /* Garante que o container ocupe a largura total */
+            }
+
+            .print-section-container table {
+                border-collapse: collapse;
+                flex-shrink: 0; /* Impede que as tabelas encolham */
+                width: 100%; /* Faz as tabelas preencherem o espaço disponível no flex item */
+            }
+
+            .print-section-container th { /* Cabeçalho da tabela na impressão */
+                background-color: #2c3e50 !important; /* Azul escuro */
+                color: white !important; /* Letra branca */
+                -webkit-print-color-adjust: exact; /* Força a impressão das cores de fundo no Chrome/Safari */
+                color-adjust: exact; /* Força a impressão das cores de fundo */
+            }
+
+            .print-section-container td { /* Estilo para células de dados na impressão */
+                border: 1px solid #000;
+                padding: 2px;
+                text-align: center;
+                vertical-align: top;
+            }
+            
+            .section-header {
+                background-color: #f0f0f0; /* Fundo mais claro para impressão */
+                color: #2c3e50;
+                border-bottom: 1px solid #ddd;
+                padding: 8px 10px;
+                font-size: 10px;
+            }
+            .section-header button {
+                display: none; /* Esconde botões de adicionar na impressão */
+            }
+            .multi-line-cell {
+                text-align: left; /* Alinha o texto à esquerda para células com múltiplas linhas */
+                padding-left: 5px; /* Pequeno padding para legibilidade */
+            }
+
+            /* Estilos para o título principal na impressão */
+            h1 {
+                background-color: #FFD700 !important; /* Amarelo */
+                color: #333 !important; /* Cor de texto mais escura para contraste */
+                border: 1px solid #FFA500 !important; /* Borda laranja */
+                -webkit-print-color-adjust: exact; /* Força a impressão das cores de fundo no Chrome/Safari */
+                color-adjust: exact; /* Força a impressão das cores de fundo */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Planilha de Trabalhador do GCE Casa do Caminho</h1>
+                
+        <div class="controls">
+            <div class="control-group">
+                <label for="mesSelect">Mês:</label>
+                <select id="mesSelect">
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+            </div>
+                        
+            <div class="control-group">
+                <label for="anoInput">Ano:</label>
+                <input type="number" id="anoInput" value="2025" min="2020" max="2099">
+            </div>
+                        
+            <div class="control-group">
+                <button onclick="carregarDados()" class="add-btn">Carregar/Criar Planilha</button>
+            </div>
+                        
+            <div class="control-group">
+                <button onclick="exportarPDF()" class="export-btn">Exportar PDF</button>
+            </div>
+        </div>
+
+        <!-- Seções Principais (Trabalhador e Atividade) -->
+        <div class="planilhas-container">
+            <!-- Seção Trabalhador -->
+            <div class="section">
+                <div class="section-header">
+                    <span>PLANILHA DO TRABALHADOR</span>
+                    <button onclick="adicionarLinhaTrabalhador()" class="add-btn">Adicionar Linha</button>
+                </div>
+                <table id="tabelaTrabalhador">
+                    <thead>
+                        <tr>
+                            <th>DIA</th>
+                            <th>RECEPÇÃO</th>
+                            <th>ATENDIMENTO<br>FRATERNO</th>
+                            <th>PASSE</th>
+                            <th>DIREÇÃO</th>
+                            <th>EXPOSITOR</th>
+                            <th>LIVRO</th>
+                            <th>TEMA</th>
+                            <th>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Seção Atividade -->
+            <div class="section">
+                <div class="section-header">
+                    <span>ATIVIDADES</span>
+                    <button onclick="adicionarLinhaAtividade()" class="add-btn">Adicionar Linha</button>
+                </div>
+                <table id="tabelaAtividade">
+                    <thead>
+                        <tr>
+                            <th>DIA</th>
+                            <th>ATIVIDADE</th>
+                            <th>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Seções Fluidoterapia -->
+        <div class="fluidoterapia-container">
+            <!-- Fluidoterapia -->
+            <div class="section">
+                <div class="section-header">
+                    <span>FLUIDOTERAPIA</span>
+                    <button onclick="adicionarLinhaFluidoterapia()" class="add-btn">Adicionar Linha</button>
+                </div>
+                <table id="tabelaFluidoterapia">
+                    <thead>
+                        <tr>
+                            <th>DIA</th>
+                            <th colspan="3">TRABALHADORES</th>
+                            <th>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Harmonização -->
+            <div class="section">
+                <div class="section-header">
+                    <span>HARMONIZAÇÃO DO SALÃO</span>
+                    <button onclick="adicionarLinhaHarmonizacao()" class="add-btn">Adicionar Linha</button>
+                </div>
+                <table id="tabelaHarmonizacao">
+                    <thead>
+                        <tr>
+                            <th>DIA</th>
+                            <th>TRABALHADOR</th>
+                            <th>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Passe Fluidoterapia -->
+            <div class="section">
+                <div class="section-header">
+                    <span>PASSES</span>
+                    <button onclick="adicionarLinhaPasseFluidoterapia()" class="add-btn">Adicionar Linha</button>
+                </div>
+                <table id="tabelaPasseFluidoterapia">
+                    <thead>
+                        <tr>
+                            <th>DIA</th>
+                            <th>TRABALHADOR</th>
+                            <th>AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados base
+        const trabalhadores = {
+            'TB01': 'DILMA',
+            'TB02': 'EDILENE',
+            'TB03': 'EDUARDO',
+            'TB04': 'FÁTIMA',
+            'TB05': 'JANY',
+            'TB06': 'JOANA',
+            'TB07': 'LIDIA',
+            'TB08': 'MÁRCIA',
+            'TB09': 'RAFAEL',
+            'TB10': 'ROGÉRIO',
+            'TB11': 'SÉRGIO',
+            'TB12': 'ALMOÇO',
+        };
+
+        const livros = {
+            'LV01': 'EVANGELHO',
+            'LV02': 'L.ESPÍRITOS'
+        };
+
+        const atividades = {
+            'AT01': 'ESTUDO',
+            'AT02': 'IRRADIAÇÃO',
+            'AT03': 'DESOBSESSÃO',
+            'AT04': 'DESOBSESSÃO CONJUNTA'
+        };
+
+        // Estrutura para armazenar os dados da planilha
+        let dadosPlanilha = {
+            trabalhador: [],
+            atividade: [],
+            fluidoterapia: [],
+            harmonizacao: [],
+            passeFluidoterapia: []
+        };
+
+        // Função de inicialização ao carregar a página
+        function inicializar() {
+            const hoje = new Date();
+            document.getElementById('mesSelect').value = String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById('anoInput').value = hoje.getFullYear();
+            carregarDados(); // Carrega os dados salvos ou cria novos
+        }
+
+        // Cria o HTML para um seletor de trabalhadores
+        function criarSelectTrabalhadores() {
+            let html = '<option value="">Selecionar...</option>';
+            for (let codigo in trabalhadores) {
+                html += `<option value="${codigo}">${trabalhadores[codigo]}</option>`;
+            }
+            return html;
+        }
+
+        // Cria o HTML para um seletor de livros
+        function criarSelectLivros() {
+            let html = '<option value="">Selecionar...</option>';
+            for (let codigo in livros) {
+                html += `<option value="${codigo}">${livros[codigo]}</option>`;
+            }
+            return html;
+        }
+
+        // Cria o HTML para um seletor de atividades
+        function criarSelectAtividades() {
+            let html = '<option value="">Selecionar...</option>';
+            for (let codigo in atividades) {
+                html += `<option value="${codigo}">${atividades[codigo]}</option>`;
+            }
+            return html;
+        }
+
+        // Adiciona uma nova linha à tabela do trabalhador
+        function adicionarLinhaTrabalhador() {
+            const linha = {
+                dia: '',
+                recepcao: '',
+                atendimentoFraterno: ['', ''], // 2 trabalhadores
+                passe: ['', '', ''], // 3 trabalhadores
+                direcao: '',
+                expositor: '',
+                livro: '',
+                tema: ''
+            };
+                        
+            dadosPlanilha.trabalhador.push(linha);
+            renderizarTabelaTrabalhador();
+            salvarDados();
+        }
+
+        // Adiciona uma nova linha à tabela de atividades
+        function adicionarLinhaAtividade() {
+            const linha = {
+                dia: '',
+                atividade: ''
+            };
+                        
+            dadosPlanilha.atividade.push(linha);
+            renderizarTabelaAtividade();
+            salvarDados();
+        }
+
+        // Adiciona uma nova linha à tabela de fluidoterapia
+        function adicionarLinhaFluidoterapia() {
+            const linha = {
+                dia: '',
+                trabalhadores: ['', '', '', '', '', ''] // 6 trabalhadores (2 linhas de 3)
+            };
+                        
+            dadosPlanilha.fluidoterapia.push(linha);
+            renderizarTabelaFluidoterapia();
+            salvarDados();
+        }
+
+        // Adiciona uma nova linha à tabela de harmonização
+        function adicionarLinhaHarmonizacao() {
+            const linha = {
+                dia: '',
+                trabalhador: '' // 1 trabalhador
+            };
+                        
+            dadosPlanilha.harmonizacao.push(linha);
+            renderizarTabelaHarmonizacao();
+            salvarDados();
+        }
+
+        // Adiciona uma nova linha à tabela de passe fluidoterapia
+        function adicionarLinhaPasseFluidoterapia() {
+            const linha = {
+                dia: '',
+                trabalhador: '' // 1 trabalhador
+            };
+                        
+            dadosPlanilha.passeFluidoterapia.push(linha);
+            renderizarTabelaPasseFluidoterapia();
+            salvarDados();
+        }
+
+        // Renderiza a tabela do trabalhador com os dados atuais
+        function renderizarTabelaTrabalhador() {
+            const tbody = document.querySelector('#tabelaTrabalhador tbody');
+            tbody.innerHTML = '';
+            dadosPlanilha.trabalhador.forEach((linha, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoTrabalhador(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><select class="select-field" onchange="atualizarDadoTrabalhador(${index}, 'recepcao', this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td>
+                        <div class="multi-trabalhador">
+                            <select class="select-field" onchange="atualizarAtendimentoFraterno(${index}, 0, this.value)">${criarSelectTrabalhadores()}</select>
+                            <select class="select-field" onchange="atualizarAtendimentoFraterno(${index}, 1, this.value)">${criarSelectTrabalhadores()}</select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="multi-trabalhador">
+                            <select class="select-field" onchange="atualizarPasse(${index}, 0, this.value)">${criarSelectTrabalhadores()}</select>
+                            <select class="select-field" onchange="atualizarPasse(${index}, 1, this.value)">${criarSelectTrabalhadores()}</select>
+                            <select class="select-field" onchange="atualizarPasse(${index}, 2, this.value)">${criarSelectTrabalhadores()}</select>
+                        </div>
+                    </td>
+                    <td><select class="select-field" onchange="atualizarDadoTrabalhador(${index}, 'direcao', this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><input type="text" class="input-field" value="${linha.expositor}" onchange="atualizarDadoTrabalhador(${index}, 'expositor', this.value)"></td>
+                    <td><select class="select-field" onchange="atualizarDadoTrabalhador(${index}, 'livro', this.value)">${criarSelectLivros()}</select></td>
+                    <td><input type="text" class="input-field" value="${linha.tema}" onchange="atualizarDadoTrabalhador(${index}, 'tema', this.value)"></td>
+                    <td><button class="delete-btn" onclick="removerLinhaTrabalhador(${index})">Excluir</button></td>
+                `;
+                                
+                // Definir valores selecionados
+                tr.children[1].children[0].value = linha.recepcao;
+                tr.children[2].querySelector('select:nth-child(1)').value = linha.atendimentoFraterno[0];
+                tr.children[2].querySelector('select:nth-child(2)').value = linha.atendimentoFraterno[1];
+                tr.children[3].querySelector('select:nth-child(1)').value = linha.passe[0];
+                tr.children[3].querySelector('select:nth-child(2)').value = linha.passe[1];
+                tr.children[3].querySelector('select:nth-child(3)').value = linha.passe[2];
+                tr.children[4].children[0].value = linha.direcao;
+                tr.children[5].children[0].value = linha.expositor;
+                tr.children[6].children[0].value = linha.livro;
+                                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Renderiza a tabela de atividades com os dados atuais
+        function renderizarTabelaAtividade() {
+            const tbody = document.querySelector('#tabelaAtividade tbody');
+            tbody.innerHTML = '';
+            dadosPlanilha.atividade.forEach((linha, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoAtividade(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><select class="select-field" onchange="atualizarDadoAtividade(${index}, 'atividade', this.value)">${criarSelectAtividades()}</select></td>
+                    <td><button class="delete-btn" onclick="removerLinhaAtividade(${index})">Excluir</button></td>
+                `;
+                                
+                tr.children[1].children[0].value = linha.atividade;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Renderiza a tabela de fluidoterapia com os dados atuais
+        function renderizarTabelaFluidoterapia() {
+            const tbody = document.querySelector('#tabelaFluidoterapia tbody');
+            tbody.innerHTML = '';
+            dadosPlanilha.fluidoterapia.forEach((linha, index) => {
+                const tr1 = document.createElement('tr');
+                tr1.innerHTML = `
+                    <td rowspan="2"><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoFluidoterapia(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 0, this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 1, this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 2, this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td rowspan="2"><button class="delete-btn" onclick="removerLinhaFluidoterapia(${index})">Excluir</button></td>
+                `;
+                                
+                const tr2 = document.createElement('tr');
+                tr2.innerHTML = `
+                    <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 3, this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 4, this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><select class="select-field" onchange="atualizarTrabalhadorFluidoterapia(${index}, 5, this.value)">${criarSelectTrabalhadores()}</select></td>
+                `;
+
+                // Definir valores selecionados
+                tr1.children[1].children[0].value = linha.trabalhadores[0];
+                tr1.children[2].children[0].value = linha.trabalhadores[1];
+                tr1.children[3].children[0].value = linha.trabalhadores[2];
+                                
+                tr2.children[0].children[0].value = linha.trabalhadores[3];
+                tr2.children[1].children[0].value = linha.trabalhadores[4];
+                tr2.children[2].children[0].value = linha.trabalhadores[5];
+                                
+                tbody.appendChild(tr1);
+                tbody.appendChild(tr2);
+            });
+        }
+
+        // Renderiza a tabela de harmonização com os dados atuais
+        function renderizarTabelaHarmonizacao() {
+            const tbody = document.querySelector('#tabelaHarmonizacao tbody');
+            tbody.innerHTML = '';
+            dadosPlanilha.harmonizacao.forEach((linha, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoHarmonizacao(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><select class="select-field" onchange="atualizarDadoHarmonizacao(${index}, 'trabalhador', this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><button class="delete-btn" onclick="removerLinhaHarmonizacao(${index})">Excluir</button></td>
+                `;
+                                
+                tr.children[1].children[0].value = linha.trabalhador;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Renderiza a tabela de passe fluidoterapia com os dados atuais
+        function renderizarTabelaPasseFluidoterapia() {
+            const tbody = document.querySelector('#tabelaPasseFluidoterapia tbody');
+            tbody.innerHTML = '';
+            dadosPlanilha.passeFluidoterapia.forEach((linha, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="number" class="input-field" value="${linha.dia}" onchange="atualizarDadoPasseFluidoterapia(${index}, 'dia', this.value)" min="1" max="31"></td>
+                    <td><select class="select-field" onchange="atualizarDadoPasseFluidoterapia(${index}, 'trabalhador', this.value)">${criarSelectTrabalhadores()}</select></td>
+                    <td><button class="delete-btn" onclick="removerLinhaPasseFluidoterapia(${index})">Excluir</button></td>
+                `;
+                                
+                tr.children[1].children[0].value = linha.trabalhador;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Funções de atualização de dados
+        function atualizarDadoTrabalhador(index, campo, valor) {
+            dadosPlanilha.trabalhador[index][campo] = valor;
+            salvarDados();
+        }
+
+        function atualizarAtendimentoFraterno(index, trabalhadorIndex, valor) {
+            dadosPlanilha.trabalhador[index].atendimentoFraterno[trabalhadorIndex] = valor;
+            salvarDados();
+        }
+
+        function atualizarPasse(index, trabalhadorIndex, valor) {
+            dadosPlanilha.trabalhador[index].passe[trabalhadorIndex] = valor;
+            salvarDados();
+        }
+
+        function atualizarDadoAtividade(index, campo, valor) {
+            dadosPlanilha.atividade[index][campo] = valor;
+            salvarDados();
+        }
+
+        function atualizarDadoFluidoterapia(index, campo, valor) {
+            dadosPlanilha.fluidoterapia[index][campo] = valor;
+            salvarDados();
+        }
+
+        function atualizarTrabalhadorFluidoterapia(index, trabalhadorIndex, valor) {
+            dadosPlanilha.fluidoterapia[index].trabalhadores[trabalhadorIndex] = valor;
+            salvarDados();
+        }
+
+        function atualizarDadoHarmonizacao(index, campo, valor) {
+            dadosPlanilha.harmonizacao[index][campo] = valor;
+            salvarDados();
+        }
+
+        function atualizarDadoPasseFluidoterapia(index, campo, valor) {
+            dadosPlanilha.passeFluidoterapia[index][campo] = valor;
+            salvarDados();
+        }
+
+        // Funções de remoção de linha
+        function removerLinhaTrabalhador(index) {
+            dadosPlanilha.trabalhador.splice(index, 1);
+            renderizarTabelaTrabalhador();
+            salvarDados();
+        }
+
+        function removerLinhaAtividade(index) {
+            dadosPlanilha.atividade.splice(index, 1);
+            renderizarTabelaAtividade();
+            salvarDados();
+        }
+
+        function removerLinhaFluidoterapia(index) {
+            dadosPlanilha.fluidoterapia.splice(index, 1);
+            renderizarTabelaFluidoterapia();
+            salvarDados();
+        }
+
+        function removerLinhaHarmonizacao(index) {
+            dadosPlanilha.harmonizacao.splice(index, 1);
+            renderizarTabelaHarmonizacao();
+            salvarDados();
+        }
+
+        function removerLinhaPasseFluidoterapia(index) {
+            dadosPlanilha.passeFluidoterapia.splice(index, 1);
+            renderizarTabelaPasseFluidoterapia();
+            salvarDados();
+        }
+
+        // Salva os dados da planilha no localStorage
+        function salvarDados() {
+            const mes = document.getElementById('mesSelect').value;
+            const ano = document.getElementById('anoInput').value;
+            const chave = `planilha_${mes}_${ano}`;
+                        
+            try {
+                localStorage.setItem(chave, JSON.stringify(dadosPlanilha));
+            } catch (e) {
+                console.error('Erro ao salvar dados no localStorage:', e);
+                // Fallback para salvar em memória se localStorage falhar (ex: quota excedida)
+                window.planilhaData = window.planilhaData || {};
+                window.planilhaData[chave] = JSON.stringify(dadosPlanilha);
+            }
+        }
+
+        // Carrega os dados da planilha do localStorage ou inicializa com dados padrão
+        function carregarDados() {
+            const mes = document.getElementById('mesSelect').value;
+            const ano = document.getElementById('anoInput').value;
+            const chave = `planilha_${mes}_${ano}`;
+            
+            try {
+                const dados = localStorage.getItem(chave);
+                if (dados) {
+                    dadosPlanilha = JSON.parse(dados);
+                } else {
+                    dadosPlanilha = {
+                        trabalhador: [],
+                        atividade: [],
+                        fluidoterapia: [],
+                        harmonizacao: [],
+                        passeFluidoterapia: []
+                    };
+                                        
+                    // Adicionar 1 linha padrão para cada tabela
+                    adicionarLinhaTrabalhador();
+                    adicionarLinhaAtividade();
+                    adicionarLinhaFluidoterapia();
+                    adicionarLinhaHarmonizacao();
+                    adicionarLinhaPasseFluidoterapia();
+                }
+            } catch (e) {
+                console.error('Erro ao carregar dados do localStorage:', e);
+                // Fallback para carregar da memória da sessão se localStorage falhar
+                window.planilhaData = window.planilhaData || {};
+                const dados = window.planilhaData[chave];
+                if (dados) {
+                    dadosPlanilha = JSON.parse(dados);
+                } else {
+                    dadosPlanilha = {
+                        trabalhador: [],
+                        atividade: [],
+                        fluidoterapia: [],
+                        harmonizacao: [],
+                        passeFluidoterapia: []
+                    };
+                    // Adicionar 1 linha padrão para cada tabela
+                    adicionarLinhaTrabalhador();
+                    adicionarLinhaAtividade();
+                    adicionarLinhaFluidoterapia();
+                    adicionarLinhaHarmonizacao();
+                    adicionarLinhaPasseFluidoterapia();
+                }
+            }
+
+            renderizarTabelaTrabalhador();
+            renderizarTabelaAtividade();
+            renderizarTabelaFluidoterapia();
+            renderizarTabelaHarmonizacao();
+            renderizarTabelaPasseFluidoterapia();
+        }
+
+        // Exporta a planilha para PDF (abrindo em uma nova janela para impressão)
+        function exportarPDF() {
+            const mes = document.getElementById('mesSelect').value;
+            const ano = document.getElementById('anoInput').value;
+            const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                        
+            const janelaImpressao = window.open('', '_blank');
+                        
+            let htmlImpressao = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Planilha ${meses[parseInt(mes)]} ${ano}</title>
+                    <style>
+                        @page { size: landscape; margin: 0.5in; } /* Configura a página para paisagem */
+                        body { font-family: Arial, sans-serif; font-size: 10px; }
+                        h1 { text-align: center; font-size: 18px; margin-bottom: 8px; 
+                             background-color: #FFD700 !important; color: #333 !important; 
+                             border: 1px solid #FFA500 !important; border-radius: 8px; padding: 10px 20px;
+                             -webkit-print-color-adjust: exact; color-adjust: exact; }
+                        h2 { font-size: 12px; margin-bottom: 5px; }
+                        
+                        /* Estilos para as tabelas de impressão */
+                        .print-section-container {
+                            display: flex;
+                            flex-wrap: nowrap;
+                            gap: 10px;
+                            margin-bottom: 20px;
+                            width: 100%;
+                        }
+
+                        .print-section-container table {
+                            border-collapse: collapse;
+                            flex-shrink: 0;
+                            width: 100%;
+                        }
+
+                        .print-section-container th {
+                            background-color: #2c3e50 !important; /* Azul escuro */
+                            color: white !important; /* Letra branca */
+                            border: 1px solid #000;
+                            padding: 2px;
+                            text-align: center;
+                            vertical-align: top;
+                            -webkit-print-color-adjust: exact;
+                            color-adjust: exact;
+                        }
+                        .print-section-container td {
+                            border: 1px solid #000;
+                            padding: 2px;
+                            text-align: center;
+                            vertical-align: top;
+                        }
+                        
+                        .multi-line-cell {
+                            text-align: left;
+                            padding-left: 5px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>PLANILHA DO TRABALHADOR - ${meses[parseInt(mes)].toUpperCase()} ${ano}</h1>
+                    
+                    <h2>PLANILHA PRINCIPAL</h2>
+                    <div class="print-section-container">
+                        <div style="flex: 2;"> <!-- Container para a tabela de Trabalhador -->
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DIA</th>
+                                        <th>RECEPÇÃO</th>
+                                        <th>ATENDIMENTO<br>FRATERNO</th>
+                                        <th>PASSE</th>
+                                        <th>DIREÇÃO</th>
+                                        <th>EXPOSITOR</th>
+                                        <th>LIVRO</th>
+                                        <th>TEMA</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            // Adiciona as linhas da tabela principal (sem preenchimento para alinhar com atividade)
+            dadosPlanilha.trabalhador.forEach(linha => {
+                // Garante que os arrays estejam inicializados para evitar erros
+                linha.atendimentoFraterno = linha.atendimentoFraterno || ['', ''];
+                linha.passe = linha.passe || ['', '', ''];
+
+                htmlImpressao += `
+                    <tr>
+                        <td>${linha.dia || ''}</td>
+                        <td>${linha.recepcao ? trabalhadores[linha.recepcao] : ''}</td>
+                        <td class="multi-line-cell">
+                            ${linha.atendimentoFraterno[0] ? trabalhadores[linha.atendimentoFraterno[0]] : ''}<br>
+                            ${linha.atendimentoFraterno[1] ? trabalhadores[linha.atendimentoFraterno[1]] : ''}
+                        </td>
+                        <td class="multi-line-cell">
+                            ${linha.passe[0] ? trabalhadores[linha.passe[0]] : ''}<br>
+                            ${linha.passe[1] ? trabalhadores[linha.passe[1]] : ''}<br>
+                            ${linha.passe[2] ? trabalhadores[linha.passe[2]] : ''}
+                        </td>
+                        <td>${linha.direcao ? trabalhadores[linha.direcao] : ''}</td>
+                        <td>${linha.expositor || ''}</td>
+                        <td>${linha.livro ? livros[linha.livro] : ''}</td>
+                        <td>${linha.tema || ''}</td>
+                    </tr>`;
+            });
+
+            htmlImpressao += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="flex: 1;"> <!-- Container para a tabela de Atividade -->
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DIA</th>
+                                        <th>ATIVIDADE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            // Adiciona as linhas da tabela de atividade (sem preenchimento para alinhar com principal)
+            dadosPlanilha.atividade.forEach(linha => {
+                htmlImpressao += `
+                    <tr>
+                        <td>${linha.dia || ''}</td>
+                        <td>${linha.atividade ? atividades[linha.atividade] : ''}</td>
+                    </tr>`;
+            });
+
+            htmlImpressao += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <h2>FLUIDOTERAPIA</h2>
+                    <div class="print-section-container">
+                        <div style="flex: 2;"> <!-- Container para a tabela de Fluidoterapia -->
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DIA</th>
+                                        <th colspan="3">TRABALHADORES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            // Adiciona as linhas da tabela de fluidoterapia (sem preenchimento para alinhar com harmonização/passe)
+            dadosPlanilha.fluidoterapia.forEach(linha => {
+                linha.trabalhadores = linha.trabalhadores || ['', '', '', '', '', ''];
+
+                htmlImpressao += `
+                    <tr>
+                        <td rowspan="2">${linha.dia || ''}</td>
+                        <td>${linha.trabalhadores[0] ? trabalhadores[linha.trabalhadores[0]] : ''}</td>
+                        <td>${linha.trabalhadores[1] ? trabalhadores[linha.trabalhadores[1]] : ''}</td>
+                        <td>${linha.trabalhadores[2] ? trabalhadores[linha.trabalhadores[2]] : ''}</td>
+                    </tr>
+                    <tr>
+                        <td>${linha.trabalhadores[3] ? trabalhadores[linha.trabalhadores[3]] : ''}</td>
+                        <td>${linha.trabalhadores[4] ? trabalhadores[linha.trabalhadores[4]] : ''}</td>
+                        <td>${linha.trabalhadores[5] ? trabalhadores[linha.trabalhadores[5]] : ''}</td>
+                    </tr>`;
+            });
+
+            htmlImpressao += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="flex: 1;"> <!-- Container para a tabela de Harmonização -->
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DIA</th>
+                                        <th>HARMONIZAÇÃO</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            dadosPlanilha.harmonizacao.forEach(linha => {
+                htmlImpressao += `
+                    <tr>
+                        <td>${linha.dia || ''}</td>
+                        <td>${linha.trabalhador ? trabalhadores[linha.trabalhador] : ''}</td>
+                    </tr>`;
+            });
+
+            htmlImpressao += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="flex: 1;"> <!-- Container para a tabela de Passe Fluidoterapia -->
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>DIA</th>
+                                        <th>PASSE FLUIDOTERAPIA</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            dadosPlanilha.passeFluidoterapia.forEach(linha => {
+                htmlImpressao += `
+                    <tr>
+                        <td>${linha.dia || ''}</td>
+                        <td>${linha.trabalhador ? trabalhadores[linha.trabalhador] : ''}</td>
+                    </tr>`;
+            });
+
+            htmlImpressao += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </body>
+                </html>`;
+
+            // Se estiver no ambiente Electron, use a API printToPDF
+            if (window.electronAPI) { // Verifica se a API do Electron está disponível
+                window.electronAPI.printToPDF(htmlImpressao, `Planilha_${meses[parseInt(mes)]}_${ano}.pdf`);
+            } else {
+                // Caso contrário, use a função de impressão padrão do navegador
+                janelaImpressao.document.write(htmlImpressao);
+                janelaImpressao.document.close();
+                setTimeout(() => {
+                    janelaImpressao.print();
+                }, 500);
+            }
+        }
+
+        // Inicializa a aplicação quando a janela estiver totalmente carregada
+        window.onload = inicializar;
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</body>
+</html>

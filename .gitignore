@@ -1,0 +1,22 @@
+#pastas
+dist/
+node_modules/
+
+#arquivos de configuração
+package-lock.json
+
+
+
+# arquivos de log
+*.log
+
+# Arquivos de backup
+*.bak
+
+# Arquivos temporários
+*.tmp
+*.txt
+
+# Arquivos de cache
+.cache/
+.vscode/
