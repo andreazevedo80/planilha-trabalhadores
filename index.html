@@ -308,7 +308,6 @@
 <body>
     <div class="container">
         <h1>Sistema de Planilha de Trabalhador do GCE Casa do Caminho</h1>
-                
         <div class="controls">
             <div class="control-group">
                 <label for="mesSelect">Mês:</label>
@@ -711,37 +710,50 @@
                     expositorInput.classList.add('error-cell'); // Also highlight expositor as it's part of the rule
                 }
 
-                // Rule 6: Atendimento Fraterno exclusivity
-                const atendimentoFraternoWorkers = linha.atendimentoFraterno.filter(Boolean); // Filter out empty strings
-                
-                // Collect all other assigned workers for the same day in this row
-                const otherAssignedWorkers = [
-                    linha.recepcao,
+            // Rule 6: Recepção exclusivity
+            // Quem for escalado na Recepção não pode ser escalado para nenhuma outra atividade no mesmo dia.
+            const recepcaoWorker = linha.recepcao; // O trabalhador escalado na Recepção
+            const recepcaoCellElement = recepcaoCell.querySelector('.select-field'); // O elemento DOM da célula de Recepção
+
+            if (recepcaoWorker) { // A regra só se aplica se houver um trabalhador na Recepção
+                // Coleta todos os outros trabalhadores atribuídos para o mesmo dia NESTA LINHA DA TABELA TRABALHADOR
+                const otherAssignedWorkersInTrabalhadorRow = [
+                    ...linha.atendimentoFraterno,
                     ...linha.passe,
                     linha.direcao,
-                    expositorWorkerCode // Use the code if expositor is a known worker
-                ].filter(Boolean);
+                    expositorWorkerCode // Usa o código se o expositor for um trabalhador conhecido
+                ].filter(Boolean); // Remove strings vazias para evitar comparações indesejadas
 
                 let conflictDetected = false;
-                atendimentoFraternoWorkers.forEach(afWorker => {
-                    if (otherAssignedWorkers.includes(afWorker)) {
+                otherAssignedWorkersInTrabalhadorRow.forEach(otherWorker => {
+                    if (otherWorker === recepcaoWorker) {
                         conflictDetected = true;
                     }
                 });
 
                 if (conflictDetected) {
-                    // Highlight Atendimento Fraterno cells
-                    atendimentoFraternoCells.forEach(cell => cell.classList.add('error-cell'));
+                    // Destaca a célula da Recepção
+                    recepcaoCellElement.classList.add('error-cell');
 
-                    // Highlight conflicting cells in other activities for the same day
-                    if (atendimentoFraternoWorkers.includes(linha.recepcao)) recepcaoCell.querySelector('.select-field').classList.add('error-cell');
-                    linha.passe.forEach((pWorker, idx) => {
-                        if (atendimentoFraternoWorkers.includes(pWorker)) passeCells[idx].classList.add('error-cell');
+                    // Destaca as células conflitantes nas outras atividades na mesma linha do trabalhador
+                    linha.atendimentoFraterno.forEach((afWorker, idx) => {
+                        if (afWorker === recepcaoWorker) {
+                            atendimentoFraternoCells[idx].classList.add('error-cell');
+                        }
                     });
-                    if (atendimentoFraternoWorkers.includes(linha.direcao)) direcaoCell.querySelector('.select-field').classList.add('error-cell');
-                    if (expositorWorkerCode && atendimentoFraternoWorkers.includes(expositorWorkerCode)) expositorInput.classList.add('error-cell');
+                    linha.passe.forEach((pWorker, idx) => {
+                        if (pWorker === recepcaoWorker) {
+                            passeCells[idx].classList.add('error-cell');
+                        }
+                    });
+                    if (linha.direcao === recepcaoWorker) {
+                        direcaoCell.querySelector('.select-field').classList.add('error-cell');
+                    }
+                    if (expositorWorkerCode === recepcaoWorker) { // Se o Expositor for o mesmo que a Recepção
+                        expositorInput.classList.add('error-cell');
+                    }
                 }
-            });
+            }
 
             // Validate Fluidoterapia, Harmonização, Passe Fluidoterapia tables for Rule 1 & 4
             ['fluidoterapia', 'harmonizacao', 'passeFluidoterapia'].forEach(tableName => {
