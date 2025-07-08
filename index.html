@@ -25,6 +25,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative; /* ESSA LINHA É NECESSÁRIA PARA O POSICIONAMENTO DA CAIXA DE REGRAS */
         }
 
         /* Ajuste para o título principal (h1) */
@@ -103,7 +104,7 @@
             grid-template-columns: 2fr 1fr; /* Planilha do Trabalhador maior que Atividades */
             gap: 20px;
             margin-bottom: 30px;
-            margin-top: 110px;
+            margin-top: 110px; /* Adicionado para afastar as tabelas da caixa de regras. Ajuste este valor se necessário. */
         }
 
         /* Layout de grid para as seções de fluidoterapia */
@@ -212,17 +213,6 @@
             border: 1px solid #D32F2F !important; /* Darker red border for emphasis */
         }
 
-/* Adicione ou modifique a classe .container para incluir position: relative; */
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative; /* ESSA LINHA É NECESSÁRIA PARA O POSICIONAMENTO DA CAIXA DE REGRAS */
-        }
-
         /* Estilos para a nova caixa de regras */
         .rules-box {
             position: absolute; /* Posiciona a caixa de forma absoluta em relação ao .container */
@@ -262,13 +252,6 @@
 
         .rules-box ul li:last-child {
             margin-bottom: 0; /* Remove a margem do último item */
-        }
-
-        /* Estilos para impressão: garante que a caixa de regras não apareça no PDF */
-        @media print {
-            .rules-box {
-                display: none;
-            }
         }
 
 
@@ -363,12 +346,18 @@
                 -webkit-print-color-adjust: exact;
                 color-adjust: exact;
             }
+
+            /* Estilos para impressão: garante que a caixa de regras não apareça no PDF */
+            .rules-box {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Sistema de Planilha de Trabalhador do GCE Casa do Caminho</h1>
+                
         <div class="controls">
             <div class="control-group">
                 <label for="mesSelect">Mês:</label>
@@ -401,6 +390,7 @@
                 <button onclick="exportarPDF()" class="export-btn">Exportar PDF</button>
             </div>
         </div>
+
         <div class="rules-box">
             <div class="rules-header">REGRAS</div>
             <p>Caso a célula fique vermelha, observe as regras:</p>
@@ -686,191 +676,168 @@
             // Clear all existing error highlights first
             document.querySelectorAll('.error-cell').forEach(el => el.classList.remove('error-cell'));
 
-            // Validation Rule 1 & 4: Workers Lídia, Fátima, Márcia (no Sundays) / Dilma, Jany, Rogério (only Sundays)
+            // Rule 1, 2, 4, 5, 6 for Trabalhador table
             dadosPlanilha.trabalhador.forEach((linha, rowIndex) => {
-                // Ensure the row exists in the DOM
                 const rowElement = document.querySelector(`#tabelaTrabalhador tbody tr:nth-child(${rowIndex + 1})`);
-                if (!rowElement) return;
+                if (!rowElement) return; // Ensure the row exists
 
                 const isCurrentSunday = isSunday(linha.dia);
-                
-                const checkWorkerRule = (workerCode, cellElement) => {
-                    if (!workerCode) return;
+                const eduardoCode = 'TB03';
+                const janyCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'JANY');
+                const rogerioCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'ROGÉRIO');
+
+                const recepcaoCell = rowElement.children[1];
+                const recepcaoSelect = recepcaoCell ? recepcaoCell.querySelector('.select-field') : null;
+
+                const atendimentoFraternoContainer = rowElement.children[2];
+                const atendimentoFraternoSelects = atendimentoFraternoContainer ? atendimentoFraternoContainer.querySelectorAll('.select-field') : [];
+
+                const passeContainer = rowElement.children[3];
+                const passeSelects = passeContainer ? passeContainer.querySelectorAll('.select-field') : [];
+
+                const direcaoCell = rowElement.children[4];
+                const direcaoSelect = direcaoCell ? direcaoCell.querySelector('.select-field') : null;
+
+                const expositorInput = rowElement.children[5] ? rowElement.children[5].querySelector('.input-field') : null;
+                const expositorWorkerCode = expositorInput && linha.expositor ? Object.keys(trabalhadores).find(key => trabalhadores[key] === linha.expositor) : null;
+
+
+                // Helper for applying worker-specific rules (Rule 1 & 4)
+                const checkWorkerGeneralRule = (workerCode, elementToHighlight) => {
+                    if (!workerCode || !elementToHighlight) return;
                     const workerName = trabalhadores[workerCode];
                     
                     // Rule 1: Lídia, Fátima, Márcia cannot work on Sundays
                     if (['LIDIA', 'FÁTIMA', 'MÁRCIA'].includes(workerName) && isCurrentSunday) {
-                        cellElement.classList.add('error-cell');
+                        elementToHighlight.classList.add('error-cell');
                     }
                     // Rule 4: Dilma, Jany, Rogério only work on Sundays
                     if (['DILMA', 'JANY', 'ROGÉRIO'].includes(workerName) && !isCurrentSunday && linha.dia) {
-                        cellElement.classList.add('error-cell');
+                        elementToHighlight.classList.add('error-cell');
                     }
                 };
                 
-                // For 'Recepção'
-                const recepcaoCell = rowElement.children[1];
-                checkWorkerRule(linha.recepcao, recepcaoCell.querySelector('.select-field'));
-
-                // For 'Atendimento Fraterno'
-                const atendimentoFraternoCells = rowElement.children[2].querySelectorAll('.select-field');
+                checkWorkerGeneralRule(linha.recepcao, recepcaoSelect);
                 linha.atendimentoFraterno.forEach((workerCode, workerIndex) => {
-                    checkWorkerRule(workerCode, atendimentoFraternoCells[workerIndex]);
+                    if (atendimentoFraternoSelects[workerIndex]) checkWorkerGeneralRule(workerCode, atendimentoFraternoSelects[workerIndex]);
                 });
-
-                // For 'Passe'
-                const passeCells = rowElement.children[3].querySelectorAll('.select-field');
                 linha.passe.forEach((workerCode, workerIndex) => {
-                    checkWorkerRule(workerCode, passeCells[workerIndex]);
+                    if (passeSelects[workerIndex]) checkWorkerGeneralRule(workerCode, passeSelects[workerIndex]);
                 });
+                checkWorkerGeneralRule(linha.direcao, direcaoSelect);
+                checkWorkerGeneralRule(expositorWorkerCode, expositorInput);
 
-                // For 'Direção'
-                const direcaoCell = rowElement.children[4];
-                checkWorkerRule(linha.direcao, direcaoCell.querySelector('.select-field'));
-
-                // For 'Expositor' (text input, no direct worker code)
-                const expositorInput = rowElement.children[5].querySelector('.input-field');
-                const expositorWorkerCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === linha.expositor);
-                if (expositorWorkerCode) {
-                    checkWorkerRule(expositorWorkerCode, expositorInput);
-                }
-
-                // Rule 2: Trabalhador Eduardo
-                // → Não pode trabalhar no segundo domingo do mês.
-                // Se for escalado nesse dia, a célula deve ser sinalizada (ex: cor vermelha ou alerta simples).
+                // Rule 2: Eduardo not on second Sunday
                 const isSecondSundayForCurrentLine = isSecondSunday(linha.dia);
-                const eduardoCode = 'TB03'; // Código do Eduardo
-
-                // Verifica Recepção
-                if (linha.recepcao === eduardoCode && isSecondSundayForCurrentLine) {
-                    recepcaoCell.querySelector('.select-field').classList.add('error-cell');
+                if (linha.recepcao === eduardoCode && isSecondSundayForCurrentLine && recepcaoSelect) {
+                    recepcaoSelect.classList.add('error-cell');
                 }
-
-                // Verifica Atendimento Fraterno
                 linha.atendimentoFraterno.forEach((workerCode, workerIndex) => {
-                    if (workerCode === eduardoCode && isSecondSundayForCurrentLine) {
-                        atendimentoFraternoCells[workerIndex].classList.add('error-cell');
+                    if (workerCode === eduardoCode && isSecondSundayForCurrentLine && atendimentoFraternoSelects[workerIndex]) {
+                        atendimentoFraternoSelects[workerIndex].classList.add('error-cell');
                     }
                 });
-
-                // Verifica Passe
                 linha.passe.forEach((workerCode, workerIndex) => {
-                    if (workerCode === eduardoCode && isSecondSundayForCurrentLine) {
-                        passeCells[workerIndex].classList.add('error-cell');
+                    if (workerCode === eduardoCode && isSecondSundayForCurrentLine && passeSelects[workerIndex]) {
+                        passeSelects[workerIndex].classList.add('error-cell');
                     }
                 });
-
-                // Verifica Direção
-                if (linha.direcao === eduardoCode && isSecondSundayForCurrentLine) {
-                    direcaoCell.querySelector('.select-field').classList.add('error-cell');
+                if (linha.direcao === eduardoCode && isSecondSundayForCurrentLine && direcaoSelect) {
+                    direcaoSelect.classList.add('error-cell');
                 }
-
-                // Verifica Expositor
-                const eduardoName = trabalhadores[eduardoCode];
-                if (linha.expositor === eduardoName && isSecondSundayForCurrentLine) {
+                if (linha.expositor === trabalhadores[eduardoCode] && isSecondSundayForCurrentLine && expositorInput) {
                     expositorInput.classList.add('error-cell');
                 }
-                
-                // Rule 5: Jany in Passe requires Jany or Rogério as Expositor
-                const janyCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'JANY');
-                const rogerioCode = Object.keys(trabalhadores).find(key => trabalhadores[key] === 'ROGÉRIO');
 
+                // Rule 5: Jany in Passe requires Jany or Rogério as Expositor
                 const isJanyInPasse = linha.passe.includes(janyCode);
                 const isExpositorJanyOrRogerio = (linha.expositor === trabalhadores[janyCode] || linha.expositor === trabalhadores[rogerioCode]);
 
                 if (isJanyInPasse && !isExpositorJanyOrRogerio) {
-                    passeCells.forEach(cell => cell.classList.add('error-cell'));
-                    expositorInput.classList.add('error-cell'); // Also highlight expositor as it's part of the rule
+                    passeSelects.forEach(cell => { if (cell) cell.classList.add('error-cell'); });
+                    if (expositorInput) expositorInput.classList.add('error-cell');
                 }
 
-            // Rule 6: Recepção exclusivity
-            // Quem for escalado na Recepção não pode ser escalado para nenhuma outra atividade no mesmo dia.
-            const recepcaoWorker = linha.recepcao; // O trabalhador escalado na Recepção
-            const recepcaoCellElement = recepcaoCell.querySelector('.select-field'); // O elemento DOM da célula de Recepção
+                // Rule 6: Recepção exclusivity
+                const recepcaoWorker = linha.recepcao;
+                if (recepcaoWorker) {
+                    const otherAssignedWorkersInTrabalhadorRow = [
+                        ...linha.atendimentoFraterno,
+                        ...linha.passe,
+                        linha.direcao,
+                        expositorWorkerCode
+                    ].filter(Boolean);
 
-            if (recepcaoWorker) { // A regra só se aplica se houver um trabalhador na Recepção
-                // Coleta todos os outros trabalhadores atribuídos para o mesmo dia NESTA LINHA DA TABELA TRABALHADOR
-                const otherAssignedWorkersInTrabalhadorRow = [
-                    ...linha.atendimentoFraterno,
-                    ...linha.passe,
-                    linha.direcao,
-                    expositorWorkerCode // Usa o código se o expositor for um trabalhador conhecido
-                ].filter(Boolean); // Remove strings vazias para evitar comparações indesejadas
-
-                let conflictDetected = false;
-                otherAssignedWorkersInTrabalhadorRow.forEach(otherWorker => {
-                    if (otherWorker === recepcaoWorker) {
-                        conflictDetected = true;
-                    }
-                });
-
-                if (conflictDetected) {
-                    // Destaca a célula da Recepção
-                    recepcaoCellElement.classList.add('error-cell');
-
-                    // Destaca as células conflitantes nas outras atividades na mesma linha do trabalhador
-                    linha.atendimentoFraterno.forEach((afWorker, idx) => {
-                        if (afWorker === recepcaoWorker) {
-                            atendimentoFraternoCells[idx].classList.add('error-cell');
+                    let conflictDetected = false;
+                    otherAssignedWorkersInTrabalhadorRow.forEach(otherWorker => {
+                        if (otherWorker === recepcaoWorker) {
+                            conflictDetected = true;
                         }
                     });
-                    linha.passe.forEach((pWorker, idx) => {
-                        if (pWorker === recepcaoWorker) {
-                            passeCells[idx].classList.add('error-cell');
+
+                    if (conflictDetected) {
+                        if (recepcaoSelect) recepcaoSelect.classList.add('error-cell');
+
+                        linha.atendimentoFraterno.forEach((afWorker, idx) => {
+                            if (afWorker === recepcaoWorker && atendimentoFraternoSelects[idx]) {
+                                atendimentoFraternoSelects[idx].classList.add('error-cell');
+                            }
+                        });
+                        linha.passe.forEach((pWorker, idx) => {
+                            if (pWorker === recepcaoWorker && passeSelects[idx]) {
+                                passeSelects[idx].classList.add('error-cell');
+                            }
+                        });
+                        if (linha.direcao === recepcaoWorker && direcaoSelect) {
+                            direcaoSelect.classList.add('error-cell');
                         }
-                    });
-                    if (linha.direcao === recepcaoWorker) {
-                        direcaoCell.querySelector('.select-field').classList.add('error-cell');
-                    }
-                    if (expositorWorkerCode === recepcaoWorker) { // Se o Expositor for o mesmo que a Recepção
-                        expositorInput.classList.add('error-cell');
+                        if (expositorWorkerCode === recepcaoWorker && expositorInput) {
+                            expositorInput.classList.add('error-cell');
+                        }
                     }
                 }
-            }
+            });
 
             // Validate Fluidoterapia, Harmonização, Passe Fluidoterapia tables for Rule 1 & 4
             ['fluidoterapia', 'harmonizacao', 'passeFluidoterapia'].forEach(tableName => {
                 const tableBody = document.querySelector(`#tabela${tableName.charAt(0).toUpperCase() + tableName.slice(1)} tbody`);
-                if (!tableBody) return; // Ensure table exists
+                if (!tableBody) return;
 
                 dadosPlanilha[tableName].forEach((linha, rowIndex) => {
                     const isCurrentSunday = isSunday(linha.dia);
                     
                     let workerCodesToCheck = [];
-                    let cellsToHighlight = [];
+                    let elementsToHighlight = []; // Changed from cellsToHighlight for clarity
 
                     if (tableName === 'fluidoterapia') {
                         workerCodesToCheck = linha.trabalhadores;
-                        // Select all select elements in the two rows for fluidoterapia
                         const firstRow = tableBody.querySelector(`tr:nth-child(${rowIndex * 2 + 1})`);
                         const secondRow = tableBody.querySelector(`tr:nth-child(${rowIndex * 2 + 2})`);
-                        if (firstRow) cellsToHighlight.push(...firstRow.querySelectorAll('td select'));
-                        if (secondRow) cellsToHighlight.push(...secondRow.querySelectorAll('td select'));
+                        if (firstRow) elementsToHighlight.push(...firstRow.querySelectorAll('td select'));
+                        if (secondRow) elementsToHighlight.push(...secondRow.querySelectorAll('td select'));
                     } else if (tableName === 'harmonizacao' || tableName === 'passeFluidoterapia') {
                         workerCodesToCheck = [linha.trabalhador];
                         const row = tableBody.querySelector(`tr:nth-child(${rowIndex + 1})`);
-                        if (row) cellsToHighlight.push(row.querySelector('td:nth-child(2) select'));
+                        if (row) elementsToHighlight.push(row.querySelector('td:nth-child(2) select'));
                     }
 
                     workerCodesToCheck.filter(Boolean).forEach((workerCode, workerIndex) => {
                         const workerName = trabalhadores[workerCode];
-                        const cellElement = cellsToHighlight[workerIndex];
-
-                        if (!cellElement) return; // Skip if element not found
+                        const element = elementsToHighlight[workerIndex]; // Using 'element'
+                        if (!element) return; // Null check for the element
 
                         // Rule 1: Lídia, Fátima, Márcia cannot work on Sundays
                         if (['LIDIA', 'FÁTIMA', 'MÁRCIA'].includes(workerName) && isCurrentSunday) {
-                            cellElement.classList.add('error-cell');
+                            element.classList.add('error-cell');
                         }
                         // Rule 4: Dilma, Jany, Rogério only work on Sundays
                         if (['DILMA', 'JANY', 'ROGÉRIO'].includes(workerName) && !isCurrentSunday && linha.dia) {
-                            cellElement.classList.add('error-cell');
+                            element.classList.add('error-cell');
                         }
                     });
                 });
             });
         }
-
 
         // Renderiza a tabela do trabalhador com os dados atuais
         function renderizarTabelaTrabalhador() {
@@ -1195,8 +1162,6 @@
             const ano = document.getElementById('anoInput').value;
             const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                        
-            const janelaImpressao = window.open('', '_blank');
             
             // Helper function to determine if a cell should have an error class for printing
             function checkPrintError(day, field, workerCodeOrValue, currentLineData = {}) {
@@ -1214,7 +1179,7 @@
                     hasError = true;
                 }
                 // Rule 2: Eduardo not on second Sunday (specifically for Direção)
-                if (workerCodeOrValue === 'TB03' && isSecondSundayVal && field === 'direcao') { // TB03 is Eduardo
+                if (workerCodeOrValue === 'TB03' && isSecondSundayVal && (field === 'direcao' || field === 'recepcao' || field === 'expositor' || field === 'passe' || field === 'atendimentoFraterno')) {
                     hasError = true;
                 }
                 
@@ -1239,28 +1204,30 @@
                 }
 
 
-                // Rule 6: Atendimento Fraterno exclusivity
+                // Rule 6: Recepção exclusivity
                 if (linhaTrabalhadorParaDia) {
-                    const atendimentoFraternoWorkers = linhaTrabalhadorParaDia.atendimentoFraterno.filter(Boolean);
-                    const otherAssignedWorkers = [
-                        linhaTrabalhadorParaDia.recepcao,
-                        ...linhaTrabalhadorParaDia.passe,
-                        linhaTrabalhadorParaDia.direcao,
-                        Object.keys(trabalhadores).find(key => trabalhadores[key] === linhaTrabalhadorParaDia.expositor)
-                    ].filter(Boolean);
+                    const recepcaoWorker = linhaTrabalhadorParaDia.recepcao;
+                    if (recepcaoWorker) {
+                        const otherAssignedWorkersInTrabalhadorRow = [
+                            ...linhaTrabalhadorParaDia.atendimentoFraterno,
+                            ...linhaTrabalhadorParaDia.passe,
+                            linhaTrabalhadorParaDia.direcao,
+                            Object.keys(trabalhadores).find(key => trabalhadores[key] === linhaTrabalhadorParaDia.expositor)
+                        ].filter(Boolean);
 
-                    let conflictDetected = false;
-                    atendimentoFraternoWorkers.forEach(afWorker => {
-                        if (otherAssignedWorkers.includes(afWorker)) {
-                            conflictDetected = true;
-                        }
-                    });
+                        let conflictDetectedForRecepcao = false;
+                        otherAssignedWorkersInTrabalhadorRow.forEach(otherWorker => {
+                            if (otherWorker === recepcaoWorker && otherWorker !== workerCodeOrValue) { // Check if the current worker in field is the Recepcao worker in conflict
+                                conflictDetectedForRecepcao = true;
+                            }
+                        });
 
-                    if (conflictDetected) {
-                        if (field === 'atendimentoFraterno' && atendimentoFraternoWorkers.includes(workerCodeOrValue)) {
-                            hasError = true;
-                        } else if (['recepcao', 'passe', 'direcao', 'expositor'].includes(field) && atendimentoFraternoWorkers.includes(workerCodeOrValue)) {
-                            hasError = true;
+                        if (conflictDetectedForRecepcao) {
+                            if (workerCodeOrValue === recepcaoWorker) { // If this cell is the Recepcao worker, mark it
+                                hasError = true;
+                            } else if (otherAssignedWorkersInTrabalhadorRow.includes(workerCodeOrValue) && recepcaoWorker === workerCodeOrValue) {
+                                hasError = true;
+                            }
                         }
                     }
                 }
@@ -1268,6 +1235,8 @@
                 return hasError ? ' error-cell-print' : '';
             }
 
+            const janelaImpressao = window.open('', '_blank');
+                        
             let htmlImpressao = `
                 <!DOCTYPE html>
                 <html>
